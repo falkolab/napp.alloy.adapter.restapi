@@ -38,8 +38,8 @@ function apiCall(_options, _callback) {
 			// we dont want to parse the JSON on a empty response
 			if (this.status != 304 && this.status != 204) {
 				// parse JSON
-				try {
-					responseJSON = JSON.parse(this.responseText);
+				try {				   
+					responseJSON = JSON.parse(this.responseText);					
 				} catch (e) {
 					Ti.API.error('[REST API] apiCall PARSE ERROR: ' + e.message);
 					Ti.API.error('[REST API] apiCall PARSE ERROR: ' + this.responseText);
@@ -155,8 +155,9 @@ function Sync(method, model, opts) {
 
 	// Send our own custom headers
 	if (model.config.hasOwnProperty("headers")) {
-		for (var header in model.config.headers) {
-			params.headers[header] = model.config.headers[header];
+	    var _headers = _.isFunction(model.config.headers) ? model.config.headers() : model.config.headers;
+		for (var header in _headers) {
+			params.headers[header] = _headers[header];
 		}
 	}
 
@@ -170,9 +171,10 @@ function Sync(method, model, opts) {
 	}
 
 	// Extend the provided url params with those from the model config
-	if (_.isObject(params.urlparams) || model.config.URLPARAMS) {
-		_.extend(params.urlparams, _.isFunction(model.config.URLPARAMS) ? model.config.URLPARAMS() : model.config.URLPARAMS);
-	}
+	if (model.config.URLPARAMS) {
+        _.isUndefined(params.urlparams) && (params.urlparams={});    
+        _.extend(params.urlparams, (_.isFunction(model.config.URLPARAMS) ? model.config.URLPARAMS() : model.config.URLPARAMS));        
+    }
 
 	// For older servers, emulate JSON by encoding the request into an HTML-form.
 	if (Alloy.Backbone.emulateJSON) {
@@ -279,7 +281,7 @@ function Sync(method, model, opts) {
 				} else {
 					params.error(model, _response.responseText);
 					Ti.API.error('[REST API] READ ERROR: ');
-					Ti.API.error(_response);
+					Ti.API.error(JSON.stringify(_response));
 				}
 			});
 			break;
